@@ -15,6 +15,19 @@ library(readxl)
 
 ## Problem 2
 
+```{r}
+accel_df = read_csv(
+  "./data/accel_data.csv") %>%
+  janitor::clean_names() %>% 
+  pivot_longer(
+    activity_1:activity_1440,
+    names_to = "activity",
+    names_prefix = "activity_",
+    values_to = "steps"
+    ) %>% 
+  mutate(steps = round(steps, digits = 2))
+```
+
 
 ## Problem 3
 
