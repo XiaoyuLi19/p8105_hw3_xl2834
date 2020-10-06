@@ -48,8 +48,7 @@ instacart %>%
   count(aisle) %>% 
   filter(n > 10000) %>% 
   mutate(aisle = factor(aisle),
-         aisle = fct_reorder(aisle, n)
-         %>% )
+         aisle = fct_reorder(aisle, n)) %>% 
   ggplot(aes(x = aisle, y = n)) + 
   geom_point() +
   theme(axis.text = element_text(angle = 90, vjust = 0.5, hjust = 1))
@@ -79,16 +78,17 @@ accel_df = read_csv(
   janitor::clean_names() %>% 
   pivot_longer(
     activity_1:activity_1440,
-    names_to = "activity",
+    names_to = "minute",
     names_prefix = "activity_",
-    values_to = "steps"
+    values_to = "activity_count"
     ) %>% 
-  mutate(steps = round(steps, digits = 2)) %>% 
-  mutate(activity = as.integer(activity))
+  mutate(activity_count = round(activity_count, digits = 0)) %>% 
+  mutate(minute = as.integer(minute),
+         activity_count = as.integer(activity_count),
+         day = as.character(day))
   mutate(day_type = case_when(
-    day == c("Saturday", "Sunday") ~ "Weekend"
-    day == c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday") ~ "Weekday"
-    TRUE ~ ""))
+    day %in% c("Saturday", "Sunday") ~ "Weekend",
+    day %in% c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday") ~ "Weekday"))
 ```
 
 #### Total activity for each day
@@ -98,7 +98,7 @@ daily_activity_df =
   accel_df %>% 
   group_by(day_id) %>% 
   summarize(
-    daily_activity = sum(steps)
+    daily_activity = sum(activity_count)
   )
 
 ```
@@ -111,11 +111,13 @@ plot_accel =
   accel_df %>% 
   group_by(day_id) %>% 
   summarize(
-    daily_activity = sum(steps),
+    daily_activity = sum(activity_count),
     day = day
   ) %>% 
   ggplot(aes(x = day_id, y = daily_activity, color = day)) +
-  geom_point()
+  geom_point() +
+  geom_smooth(se = FALSE)
+
 ```
 
 hour?
@@ -128,7 +130,7 @@ hour_accel =
 hour_accel %>% 
   group_by(hour) %>% 
   summarize(
-    hour_activity = sum(steps),
+    hour_activity = sum(activity_count),
     day = day
   ) %>% 
   ggplot(aes(x = hour, y = hour_activity, color = day)) +
@@ -139,12 +141,41 @@ don't need to do any extra things?
 ```{r}
 accel_df %>% 
   group_by(day_id) %>% 
-  ggplot(aes(x = activity, y = steps, color = day)) +
-  geom_point()
+  ggplot(aes(x = minute, y = activity_count, color = day)) +
+  geom_point() +
+  geom_line()
 ```
 
 ## Problem 3
 
+```{r}
+data("ny_noaa")
+```
 
+```{r}
+ny_noaa = 
+  mutate(ny_noaa,
+         tmin = as.integer(tmin),
+         tmax = as.integer(tmax)) %>% 
+  mutate(tmin = tmin / 10,
+         tmax = tmax / 10,
+         prcp = prcp / 10) %>% 
+  separate(date, into = c("year", "month", "day"), sep = "-" )
 
+ny_noaa %>% 
+  group_by(snow) %>% 
+  count(snow)
+    
+```
+
+"0" is the most observed value. why?
+
+mutate month using names?
+
+```{r}
+ny_noaa %>% 
+  filter(month %in% c("01", "07")) %>% 
+  group_by(id, month) %>%
+  summarise(mean_tmax = mean(tmax, na.rm = TRUE))
+```
 
