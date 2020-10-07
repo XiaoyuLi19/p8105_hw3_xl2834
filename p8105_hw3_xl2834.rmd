@@ -153,16 +153,17 @@ data("ny_noaa")
 ```
 
 ```{r}
-ny_noaa = 
+weather_df = 
   mutate(ny_noaa,
-         tmin = as.integer(tmin),
-         tmax = as.integer(tmax)) %>% 
+         tmin = as.numeric(tmin),
+         tmax = as.numeric(tmax)) %>% 
   mutate(tmin = tmin / 10,
          tmax = tmax / 10,
          prcp = prcp / 10) %>% 
-  separate(date, into = c("year", "month", "day"), sep = "-" )
+  separate(date, into = c("year", "month", "day"), sep = "-" ) 
 
-ny_noaa %>% 
+
+weather_df %>% 
   group_by(snow) %>% 
   count(snow)
     
@@ -173,9 +174,20 @@ ny_noaa %>%
 mutate month using names?
 
 ```{r}
-ny_noaa %>% 
+  
+weather_df = 
+  mutate(weather_df, 
+         tmin = as.numeric(tmin),
+         tmax = as.numeric(tmax),
+         prcp = as.numeric(prcp)
+         )
+
+weather_df %>% 
   filter(month %in% c("01", "07")) %>% 
   group_by(id, month) %>%
-  summarise(mean_tmax = mean(tmax, na.rm = TRUE))
+  summarise(mean_tmax = mean(tmax, na.rm = TRUE)) 
+
 ```
+error: not a number
+
 
