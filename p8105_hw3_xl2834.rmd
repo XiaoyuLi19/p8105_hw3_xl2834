@@ -101,59 +101,36 @@ accel_df = read_csv(
   mutate(activity_count = round(activity_count, digits = 0)) %>% 
   mutate(minute = as.integer(minute),
          activity_count = as.integer(activity_count),
-         day = as.character(day))
+         ) %>% 
   mutate(day_type = case_when(
     day %in% c("Saturday", "Sunday") ~ "Weekend",
-    day %in% c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday") ~ "Weekday"))
+    day %in% c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday") ~ "Weekday")) %>% 
+  mutate(day = ordered(day, levels = c("Monday", "Tuesday", "Wednesday", "Thursday", 
+                                      "Friday","Saturday", "Sunday"))) %>% 
+  arrange(week, day)
 ```
+(day_id makes no sense when ordered by day?)
+
+
+The dataset contains `r nrow(accel_df)` observations and `r ncol(accel_df)` variables. There are variables for time -- week, day id, day of the week, a variable indicating weekday/weekend, and the minute of that day. There is a variable showing activity of the person in a specific minute. 
 
 #### Total activity for each day
 
 ```{r}
 daily_activity_df = 
   accel_df %>% 
-  group_by(day_id) %>% 
+  group_by(week, day) %>% 
   summarize(
     daily_activity = sum(activity_count)
   )
 
 ```
 
+It seems that the person's activity count is steady during weekdays throughout the 5 weeks, except for Monday in Week 1 when he was less active. The activity on weekends fluctuated throughout the 5 weeks. He was more active than usual on the Saturday of Week 1 and 2, and less active on the Saturday of Week 4 and Week 5.
+
 #### Make a plot showing daily activities
 
-daily?
-```{r}
-plot_accel = 
-  accel_df %>% 
-  group_by(day_id) %>% 
-  summarize(
-    daily_activity = sum(activity_count),
-    day = day
-  ) %>% 
-  ggplot(aes(x = day_id, y = daily_activity, color = day)) +
-  geom_point() +
-  geom_smooth(se = FALSE)
 
-```
-
-hour?
-```{r}
-hour_accel = 
-  accel_df %>% 
-  mutate(hour = activity / 6) %>% 
-  mutate(hour = round(floor(hour)) + 1)
-
-hour_accel %>% 
-  group_by(hour) %>% 
-  summarize(
-    hour_activity = sum(activity_count),
-    day = day
-  ) %>% 
-  ggplot(aes(x = hour, y = hour_activity, color = day)) +
-  geom_point()
-```
-
-don't need to do any extra things?
 ```{r}
 accel_df %>% 
   group_by(day_id) %>% 
@@ -161,6 +138,8 @@ accel_df %>%
   geom_point() +
   geom_line()
 ```
+
+From the graph, we can see that the person is more active at around 10-12am, while less active at other time periods on Sundays compared to other days in the week.The person is active at Friday nights and Saturday nights.  
 
 ## Problem 3
 
