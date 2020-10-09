@@ -11,8 +11,9 @@ library(ggridges)
 library(p8105.datasets)
 
 knitr::opts_chunk$set(
-  fig.width = 6,
+  fig.width = 8,
   fig.asp = .6,
+  fig.height = 6,
   out.width = "90%"
 )
 
@@ -117,12 +118,16 @@ The dataset contains `r nrow(accel_df)` observations and `r ncol(accel_df)` vari
 #### Total activity for each day
 
 ```{r}
-daily_activity_df = 
-  accel_df %>% 
+accel_df %>% 
   group_by(week, day) %>% 
   summarize(
     daily_activity = sum(activity_count)
-  )
+  ) %>% 
+  pivot_wider(
+    names_from = day,
+    values_from = daily_activity
+  ) %>% 
+  knitr::kable()
 
 ```
 
@@ -135,7 +140,7 @@ It seems that the person's activity count is steady during weekdays throughout t
 accel_df %>% 
   group_by(day_id) %>% 
   ggplot(aes(x = minute, y = activity_count, color = day)) +
-  geom_point() +
+  geom_point(alpha = 0.5) +
   geom_line()
 ```
 
@@ -147,19 +152,19 @@ From the graph, we can see that the person is more active at around 10-12am, whi
 data("ny_noaa")
 ```
 The dataset contains weather information collected by New York state weather stations. It has `r nrow(ny_noaa)` rows and `r ncol(ny_noaa)` columns.
-The variables include weather station id, observation date, precipitation, snowfall, snow depth and maximum and minimum of temperature. The observation date in record spans from `r min(ny_noaa$date)` to  `r max(ny_noaa$date)`. There maximum temperatures range from `r min(ny_noaa$tmin, na.rm = TRUE)` to `r max(ny_noaa$tmax, na.rm = TRUE)` tenths of degrees C. There are a lot of missing values, especially for the maximum and minimum temperatures, which .....
+The variables include weather station id, observation date, precipitation, snowfall, snow depth and maximum and minimum of temperature. The observation date in record spans from `r min(ny_noaa$date)` to  `r max(ny_noaa$date)`. There maximum temperatures range from `r min(ny_noaa$tmin, na.rm = TRUE)` to `r max(ny_noaa$tmax, na.rm = TRUE)` tenths of degrees C. There are a lot of missing values, especially for the maximum and minimum temperatures. However, this will not be a big issue because there is a large number of observations available, and we could ignore those missing values when doing analysis.
 
 #### Do some data cleaning
 ```{r}
 weather_df = 
   mutate(ny_noaa,
          tmin = as.numeric(tmin),
-         tmax = as.numeric(tmax)) %>% 
+         tmax = as.numeric(tmax),
+         prcp = as.numeric(prcp)) %>% 
   mutate(tmin = tmin / 10,
          tmax = tmax / 10,
          prcp = prcp / 10) %>% 
   separate(date, into = c("year", "month", "day"), sep = "-" ) 
-
 
 
 weather_df %>% 
@@ -167,32 +172,26 @@ weather_df %>%
   mutate(rank = min_rank(n))
 ```
 
-"0" is the most observed value. why?
+"0" is the most observed value. Because in most days in a year in New York, there is no snow fall.
 
-mutate month using names?
 
 #### Make a two-panel plot
 ```{r}
   
-weather_df = 
-  mutate(weather_df, 
-         tmin = as.numeric(tmin),
-         tmax = as.numeric(tmax),
-         prcp = as.numeric(prcp)
-         )
-
 weather_df %>% 
   filter(month %in% c("01", "07")) %>% 
   group_by(id, year, month) %>%
   summarise(mean_tmax = mean(tmax, na.rm = TRUE)) %>% 
-  ggplot(aes(x = year, y = mean_tmax, color = id)) +
-  geom_point() + 
+  ggplot(aes(x = year, y = mean_tmax, group = id, color = id)) +
+  geom_point(alpha = 0.5) + 
   geom_path() +
   facet_grid(. ~ month) +
   theme(axis.text = element_text(angle = 90, vjust = 0.5, hjust = 1),
         legend.position = "none")
 
 ```
+
+The max temperatures fluctuated in both January (from around -12 to 10 degrees C) and July (from around 20 to 32 degrees C) across the years, and the fluctuation is larger in January. In 1994 and 2004, the tmax in January is lower than usual. There are outliers in January in 1982, 2004 and 2005, and in July in 1984 and 2004.
 
 
 #### Another two-panel plot
@@ -207,16 +206,34 @@ tmax_tmin_p =
 weather_df %>% 
   ggplot(aes(x = tmax, y = tmin)) + 
   geom_hex() +
-  theme(legend.position = "none")
+  theme(legend.position = "bottom",
+        legend.text = element_text(angle = 60, vjust = 0.5, hjust = 1)) +
+  labs(
+    title = "Temperature plot",
+    x = "Minimum temperature (C)",
+    y = "Maxiumum temperature (C)"
+  )
 
+```
+
+
+```{r}
 snow_dstrb_p =
 weather_df %>% 
   filter(snow > 0, snow < 100) %>% 
-  ggplot(aes(x = snow, fill = year)) + 
-  geom_density(alpha = .5, adjust = .5) +
-  theme(legend.position = "none")
-
-tmax_tmin_p + snow_dstrb_p
+  ggplot(aes(x = year, y = snow)) + 
+  geom_violin(aes(fill = year), alpha = .5) +
+  stat_summary(fun = "median", color = "blue") +
+  theme(axis.text = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        legend.position = "none")
+  labs(
+    title = "Snowfall distribution plot",
+    x = "snowfall (mm)") 
   
+```
+
+
+```{r, fig.height=20}
+tmax_tmin_p / snow_dstrb_p
 ```
 
