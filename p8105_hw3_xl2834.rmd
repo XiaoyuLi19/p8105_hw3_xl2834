@@ -146,7 +146,10 @@ From the graph, we can see that the person is more active at around 10-12am, whi
 ```{r}
 data("ny_noaa")
 ```
+The dataset contains weather information collected by New York state weather stations. It has `r nrow(ny_noaa)` rows and `r ncol(ny_noaa)` columns.
+The variables include weather station id, observation date, precipitation, snowfall, snow depth and maximum and minimum of temperature. The observation date in record spans from `r min(ny_noaa$date)` to  `r max(ny_noaa$date)`. There maximum temperatures range from `r min(ny_noaa$tmin, na.rm = TRUE)` to `r max(ny_noaa$tmax, na.rm = TRUE)` tenths of degrees C. There are a lot of missing values, especially for the maximum and minimum temperatures, which .....
 
+#### Do some data cleaning
 ```{r}
 weather_df = 
   mutate(ny_noaa,
@@ -158,16 +161,17 @@ weather_df =
   separate(date, into = c("year", "month", "day"), sep = "-" ) 
 
 
+
 weather_df %>% 
-  group_by(snow) %>% 
-  count(snow)
-    
+  count(snow) %>%
+  mutate(rank = min_rank(n))
 ```
 
 "0" is the most observed value. why?
 
 mutate month using names?
 
+#### Make a two-panel plot
 ```{r}
   
 weather_df = 
@@ -179,10 +183,40 @@ weather_df =
 
 weather_df %>% 
   filter(month %in% c("01", "07")) %>% 
-  group_by(id, month) %>%
-  summarise(mean_tmax = mean(tmax, na.rm = TRUE)) 
+  group_by(id, year, month) %>%
+  summarise(mean_tmax = mean(tmax, na.rm = TRUE)) %>% 
+  ggplot(aes(x = year, y = mean_tmax, color = id)) +
+  geom_point() + 
+  geom_path() +
+  facet_grid(. ~ month) +
+  theme(axis.text = element_text(angle = 90, vjust = 0.5, hjust = 1),
+        legend.position = "none")
 
 ```
-error: not a number
 
+
+#### Another two-panel plot
+```{r}
+library(hexbin)
+library(patchwork)
+```
+
+
+```{r}
+tmax_tmin_p =
+weather_df %>% 
+  ggplot(aes(x = tmax, y = tmin)) + 
+  geom_hex() +
+  theme(legend.position = "none")
+
+snow_dstrb_p =
+weather_df %>% 
+  filter(snow > 0, snow < 100) %>% 
+  ggplot(aes(x = snow, fill = year)) + 
+  geom_density(alpha = .5, adjust = .5) +
+  theme(legend.position = "none")
+
+tmax_tmin_p + snow_dstrb_p
+  
+```
 
