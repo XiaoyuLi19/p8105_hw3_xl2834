@@ -110,7 +110,6 @@ accel_df = read_csv(
                                       "Friday","Saturday", "Sunday"))) %>% 
   arrange(week, day)
 ```
-(day_id makes no sense when ordered by day?)
 
 
 The dataset contains `r nrow(accel_df)` observations and `r ncol(accel_df)` variables. There are variables for time -- week, day id, day of the week, a variable indicating weekday/weekend, and the minute of that day. There is a variable showing activity of the person in a specific minute. 
@@ -139,9 +138,10 @@ It seems that the person's activity count is steady during weekdays throughout t
 ```{r}
 accel_df %>% 
   group_by(day_id) %>% 
-  ggplot(aes(x = minute, y = activity_count, color = day)) +
-  geom_point(alpha = 0.5) +
+  ggplot(aes(x = minute, y = activity_count, color = day, group = day_id)) +
+  geom_point(alpha = 0.5, size = 0.5) +
   geom_line()
+
 ```
 
 From the graph, we can see that the person is more active at around 10-12am, while less active at other time periods on Sundays compared to other days in the week.The person is active at Friday nights and Saturday nights.  
@@ -191,7 +191,7 @@ weather_df %>%
 
 ```
 
-The max temperatures fluctuated in both January (from around -12 to 10 degrees C) and July (from around 20 to 32 degrees C) across the years, and the fluctuation is larger in January. In 1994 and 2004, the tmax in January is lower than usual. There are outliers in January in 1982, 2004 and 2005, and in July in 1984 and 2004.
+The max temperatures fluctuated in both January (from around -12 to 10 degrees C) and July (from around 20 to 32 degrees C) across the years, and the fluctuation is larger in January. In 1994 and 2004, the tmax in January is lower than usual. The mean maximum temperature in January has a slight increase trend over the years, which may indicate global warming. There are outliers in January in 1982, 2004 and 2005, and in July in 1984 and 2004. 
 
 
 #### Another two-panel plot
@@ -201,7 +201,7 @@ library(patchwork)
 ```
 
 
-```{r}
+```{r, fig.height=20, fig.width=12}
 tmax_tmin_p =
 weather_df %>% 
   ggplot(aes(x = tmax, y = tmin)) + 
@@ -214,10 +214,6 @@ weather_df %>%
     y = "Maxiumum temperature (C)"
   )
 
-```
-
-
-```{r}
 snow_dstrb_p =
 weather_df %>% 
   filter(snow > 0, snow < 100) %>% 
@@ -229,11 +225,7 @@ weather_df %>%
   labs(
     title = "Snowfall distribution plot",
     x = "snowfall (mm)") 
-  
-```
 
-
-```{r, fig.height=20}
-tmax_tmin_p / snow_dstrb_p
+  tmax_tmin_p / snow_dstrb_p
 ```
 
